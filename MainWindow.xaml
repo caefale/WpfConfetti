@@ -7,6 +7,12 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <local:ConfettiControl></local:ConfettiControl>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,0,0,20">
+            <Button Content="Burst Confetti" Click="BurstConfettiButton_Click" Margin="5,0"/>
+            <Button Content="Start/Stop Rain" Click="RainConfettiButton_Click" Margin="5,0"/>
+            <Button Content="Cannon" Click="CannonConfettiButton_Click" Margin="5,0"/>
+        </StackPanel>
+        
+        <local:ConfettiControl x:Name="ConfettiControl"></local:ConfettiControl>
     </Grid>
 </Window>

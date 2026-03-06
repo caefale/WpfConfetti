@@ -19,6 +19,32 @@ namespace WpfConfetti
         public MainWindow()
         {
             InitializeComponent();
+
+            // Check mouse down
+        }
+
+        public void BurstConfettiButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConfettiControl.ConfettiMode = ConfettiMode.Burst;
+            ConfettiControl.Emit(Mouse.GetPosition(Owner), 125);
+        }
+
+        public void RainConfettiButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ConfettiControl.IsRaining)
+            {
+                ConfettiControl.StopRain();
+            }
+            else
+            {
+                ConfettiControl.StartRain();
+            }
+        }
+
+        public void CannonConfettiButton_Click(object sender, RoutedEventArgs e)
+        {
+            ConfettiControl.ConfettiMode = ConfettiMode.Cannon;
+            ConfettiControl.Emit(Mouse.GetPosition(Owner), 500);
         }
     }
 }

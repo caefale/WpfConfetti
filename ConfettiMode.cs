@@ -4,10 +4,10 @@ using System.Text;
 
 namespace WpfConfetti
 {
-    public enum ConfettiShape
+    public enum ConfettiMode
     {
-        Rectangle,
-        Ellipse,
-        Triangle
+        Burst,
+        Rain,
+        Cannon
     }
 }
