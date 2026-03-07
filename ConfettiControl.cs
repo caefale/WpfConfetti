@@ -1,9 +1,43 @@
 ﻿using System.Windows;
 using System.Windows.Media;
-using Brushes = System.Windows.Media.Brushes;
+using System.Windows.Shapes;
 
-namespace WpfConfetti
+namespace Wpf.Confetti
 {
+    internal class ConfettiParticle
+    {
+        public Point Position { get; set; }
+        public Point BasePosition { get; set; }
+        public Vector Velocity { get; set; }
+        public Brush? Brush { get; set; }
+        public double Size { get; set; }
+        public ConfettiShape Shape { get; set; }
+        public double Drag { get; set; }
+        public bool IsWide { get; set; }
+        public double WobbleAmplitude { get; set; }
+        public double WobblePhase { get; set; }
+        public double WobbleFrequency { get; set; }
+        public double Age { get; set; }
+        public double Rotation { get; set; }
+        public double RotationSpeed { get; set; }
+        public bool IsDead { get; set; } = false;
+        public double Gravity { get; set; }
+    }
+
+    internal class CannonBatch
+    {
+        public int Remaining;
+        public double MinSpeed, MaxSpeed, Gravity, MinSize, MaxSize, Spread, Rate;
+        public List<Brush>? Colors;
+    }
+
+    internal enum ConfettiShape
+    {
+        Rectangle,
+        Ellipse,
+        Triangle
+    }
+
     public class ConfettiControl : FrameworkElement
     {
         private List<ConfettiParticle> _particles;
@@ -17,43 +51,76 @@ namespace WpfConfetti
         };
 
         private TimeSpan _lastRenderTime = TimeSpan.Zero;
+
         private static readonly Random _random = new();
-        public ConfettiMode ConfettiMode { get; set; } = ConfettiMode.Burst;
-        public bool IsRaining { get; private set; }
 
-        public double CannonRate { get; set; } = 100;
-        private int _cannonRemaining;
+        private bool _isWindowActive = true;
+        private bool _isSubscribed = false;
         private double _cannonAccumulator = 0;
+        private Queue<CannonBatch> _cannonQueue = new();
 
-        public ConfettiControl() : this(ConfettiMode.Burst)
-        {
-        }
-        public ConfettiControl(ConfettiMode confettiMode)
+        public bool IsRaining { get; private set; }
+        private double _rainRate = 80;
+        private double _rainAccumulator = 0;
+        private double _rainMinSpeed = 60, _rainMaxSpeed = 120;
+        private double _rainMinSize = 2, _rainMaxSize = 5;
+        private double _rainGravity = 85;
+        private List<Brush>? _rainColors;
+
+        public ConfettiControl()
         {
             _particles = new List<ConfettiParticle>();
-            CompositionTarget.Rendering += OnFrame;
             IsHitTestVisible = false;
-            this.ConfettiMode = confettiMode;
-        }
 
-        public void Emit(Point position, int amount)
-        {
-            switch (ConfettiMode)
+            this.IsVisibleChanged += (s, e) => UpdateRenderSubscription();
+
+            this.Loaded += (s, e) =>
             {
-                case ConfettiMode.Burst:
-                    for (int i = 0; i < amount; i++)
-                        SpawnParticle(position, 0, 360, 50, 300, 85);
-                    break;
+                var window = Window.GetWindow(this);
+                if (window != null)
+                {
+                    window.Activated += (ss, ee) => { _isWindowActive = true; _cannonAccumulator = 0; _lastRenderTime = TimeSpan.Zero; UpdateRenderSubscription(); };
+                    window.Deactivated += (ss, ee) => { _isWindowActive = false; UpdateRenderSubscription(); };
+                }
+                UpdateRenderSubscription();
+            };
 
-                case ConfettiMode.Cannon:
-                    _cannonRemaining += amount;
-                    break;
-            }
+
         }
 
-        private void SpawnCannonParticle(Point position)
+        public void Burst(int amount = 75, Point? position = null, double minSpeed = 50, 
+            double maxSpeed = 300, double minSize = 3, double maxSize = 5, double minAngle = 0,
+            double maxAngle = 360, double gravity = 85, List<Brush>? colors = null)
         {
-            double targetX = ActualWidth / 2 + (_random.NextDouble() - 0.5) * 80; // small horizontal variation
+            Point p = position ?? new Point(ActualWidth / 2, ActualHeight / 2);
+
+            UpdateRenderSubscription();
+            for (int i = 0; i < amount; i++)
+                SpawnParticle(p, minAngle, maxAngle, minSpeed, maxSpeed, gravity, minSize, maxSize, 90, colors);
+        }
+
+        public void Cannons(int amount = 500, double rate = 75, double spread = 15,
+            double minSpeed = 300, double maxSpeed = 500, double minSize = 2,
+            double maxSize = 5, double gravity = 120, List<Brush>? colors = null)
+        {
+            _cannonQueue.Enqueue(new CannonBatch
+            {
+                Remaining = amount,
+                MinSpeed = minSpeed,
+                MaxSpeed = maxSpeed,
+                Gravity = gravity,
+                MinSize = minSize,
+                MaxSize = maxSize,
+                Spread = spread,
+                Rate = rate,
+                Colors = colors
+            });
+            UpdateRenderSubscription();
+        }
+
+        private void SpawnCannonParticle(Point position, CannonBatch cannonBatch)
+        {
+            double targetX = ActualWidth / 2 + (_random.NextDouble() - 0.5) * 80; 
             double targetY = ActualHeight * 0.35;
 
             Vector dir = new Vector(
@@ -64,36 +131,36 @@ namespace WpfConfetti
             dir.Normalize();
 
             double baseAngle = Math.Atan2(dir.Y, dir.X) * 180 / Math.PI;
-            double spread = 25;
+            double spread = cannonBatch.Spread;
             double speedScale = ActualHeight / 400.0;
-            SpawnParticle(position,
-                baseAngle - spread,
-                baseAngle + spread,
-                300 * speedScale,
-                500 * speedScale,
-                120);
+            SpawnParticle(
+                position: position,
+                minAngle: baseAngle - spread,
+                maxAngle: baseAngle + spread,
+                minSpeed: cannonBatch.MinSpeed * speedScale,
+                maxSpeed: cannonBatch.MaxSpeed * speedScale,
+                gravity: cannonBatch.Gravity,
+                minSize: cannonBatch.MinSize, maxSize: cannonBatch.MaxSize,
+                colors: cannonBatch.Colors); 
         }
 
-        private void EmitRain(int amount)
+        public void StartRain(double rate = 80, double minSpeed = 60, double maxSpeed = 120,
+            double minSize = 2, double maxSize = 5, double gravity = 85, List<Brush>? colors = null)
         {
-            if (ConfettiMode != ConfettiMode.Rain) return;
-            for (int i = 0; i < amount; i++)
-            {
-                SpawnParticle(new Point(_random.NextDouble() * ActualWidth, -10), 85, 95, 60, 120, 120);
-            }
-        }
-
-
-
-        public void StartRain()
-        {
-            ConfettiMode = ConfettiMode.Rain;
             IsRaining = true;
+            _rainMinSpeed = minSpeed;
+            _rainMaxSpeed = maxSpeed;
+            _rainGravity = gravity;
+            _rainMinSize = minSize;
+            _rainMaxSize = maxSize;
+            _rainRate = rate;
+            _rainColors = colors;
+            UpdateRenderSubscription();
         }
         public void StopRain()
         {
-            ConfettiMode = ConfettiMode.Rain;
             IsRaining = false;
+            UpdateRenderSubscription();
         }
 
         protected override void OnRender(DrawingContext dc)
@@ -116,12 +183,13 @@ namespace WpfConfetti
                         dc.DrawEllipse(p.Brush, null, new Point(cx, cy), p.Size / 2, p.Size / 2);
                         break;
                     case ConfettiShape.Triangle:
+                        double s = p.Size;
                         var geo = new StreamGeometry();
                         using (var ctx = geo.Open())
                         {
-                            ctx.BeginFigure(new Point(cx, p.Position.Y), true, true);
-                            ctx.LineTo(new Point(p.Position.X + p.Size, p.Position.Y + p.Size), true, false);
-                            ctx.LineTo(new Point(p.Position.X, p.Position.Y + p.Size), true, false);
+                            ctx.BeginFigure(new Point(cx, cy - s), true, true);
+                            ctx.LineTo(new Point(cx + s, cy + s), true, false);
+                            ctx.LineTo(new Point(cx - s, cy + s), true, false);
                         }
                         dc.DrawGeometry(p.Brush, null, geo);
                         break;
@@ -133,31 +201,74 @@ namespace WpfConfetti
 
         private void OnFrame(object? sender, EventArgs e)
         {
-            if (_particles.Count == 0 && !IsRaining && _cannonRemaining == 0) return;
             var args = (RenderingEventArgs)e;
-            if (_lastRenderTime == TimeSpan.Zero) { _lastRenderTime = args.RenderingTime; return; }
-            double deltaTime = (args.RenderingTime - _lastRenderTime).TotalSeconds;
-            _lastRenderTime = args.RenderingTime;
+
+            var currentRenderingTime = args.RenderingTime;
+
+            if (_lastRenderTime == TimeSpan.Zero)
+            {
+                _lastRenderTime = currentRenderingTime;
+                return;
+            }
+
+            double deltaTime;
+
+            if (_isWindowActive)
+            {
+                deltaTime = (currentRenderingTime - _lastRenderTime).TotalSeconds;
+            }
+            else
+            {
+                // Pretend no time passed 
+                deltaTime = 0;
+                _lastRenderTime = currentRenderingTime;
+                return; 
+            }
+
+            _lastRenderTime = currentRenderingTime;
+
+            if (_particles.Count == 0 && !IsRaining && _cannonQueue.Count == 0) return;
 
             if (IsRaining)
             {
-                EmitRain(3);
-            }
-
-            if (_cannonRemaining > 0)
-            {
-                _cannonAccumulator += deltaTime;
-                double interval = 1.0 / CannonRate;
-                while (_cannonAccumulator >= interval && _cannonRemaining > 0)
+                _rainAccumulator += deltaTime;
+                double interval = 1.0 / _rainRate;
+                while (_rainAccumulator >= interval)
                 {
-                    SpawnCannonParticle(new Point(0, ActualHeight));
-                    SpawnCannonParticle(new Point(ActualWidth, ActualHeight));
-                    _cannonAccumulator -= interval; 
-                    _cannonRemaining = Math.Max(0, _cannonRemaining - 2);
+                    SpawnParticle(position: new Point(_random.NextDouble() * ActualWidth, -10),
+                        minAngle: 85, maxAngle: 95, 
+                        minSpeed: _rainMinSpeed, 
+                        maxSpeed: _rainMaxSpeed,
+                        gravity: _rainGravity, 
+                        minSize: _rainMinSize, 
+                        maxSize: _rainMaxSize,
+                        colors: _rainColors);
+                    _rainAccumulator -= interval;
                 }
             }
 
+            if (_cannonQueue.Count > 0)
+            {
+                _cannonAccumulator += deltaTime;
+                while (_cannonQueue.Count > 0)
+                {
+                    var batch = _cannonQueue.Peek();
+                    double interval = 1.0 / batch.Rate;
+                    if (_cannonAccumulator < interval) break;
+
+                    SpawnCannonParticle(new Point(0, ActualHeight), batch);
+                    SpawnCannonParticle(new Point(ActualWidth, ActualHeight), batch);
+                    _cannonAccumulator -= interval;
+
+                    if ((batch.Remaining -= 2) <= 0)
+                    {
+                        _cannonQueue.Dequeue();
+                        _cannonAccumulator = 0;
+                    }
+                }
+            }
             UpdateParticles(deltaTime);
+
             InvalidateVisual();
         }
 
@@ -170,8 +281,9 @@ namespace WpfConfetti
                 p.BasePosition += p.Velocity * deltaTime;
 
                 p.Velocity = new Vector(p.Velocity.X, p.Velocity.Y + p.Gravity * deltaTime);
-                p.Velocity *= Math.Pow(p.Drag, deltaTime);
-                p.RotationSpeed *= Math.Pow(p.Drag, deltaTime);
+                double drag = Math.Pow(p.Drag, deltaTime);
+                p.Velocity *= drag;
+                p.RotationSpeed *= drag;
 
                 double wobbleStrength = Math.Clamp(p.Age * 1.5, 0.0, 1.0);
                 double wobbleOffset = Math.Sin(p.Age * p.WobbleFrequency + p.WobblePhase)
@@ -190,22 +302,24 @@ namespace WpfConfetti
         }
 
         private void SpawnParticle(Point position, double minAngle, double maxAngle,
-            double minSpeed, double maxSpeed, double gravity)
+            double minSpeed, double maxSpeed, double gravity, double minSize, double maxSize, 
+            int angleAdjustment = 0, List<Brush>? colors = null)
         {
             double angleDeg = minAngle + _random.NextDouble() * (maxAngle - minAngle);
-            if (ConfettiMode == ConfettiMode.Burst) angleDeg -= 90;
+            angleDeg -= angleAdjustment;
             double angleRad = angleDeg * Math.PI / 180.0;
             double speed = minSpeed + _random.NextDouble() * (maxSpeed - minSpeed);
             double shapeRoll = _random.NextDouble();
+            List<Brush> colorList = colors ?? _colors;
             ConfettiParticle confettiParticle = new ConfettiParticle
             {
                 Position = position,
                 BasePosition = position,
                 Velocity = new Vector(Math.Cos(angleRad) * speed, Math.Sin(angleRad) * speed),
-                Size = 2 + _random.NextDouble() * 3,
-                Brush = _colors[_random.Next(_colors.Count)],
-                Shape = shapeRoll < 0.6 ? ConfettiShape.Rectangle // 60% rectangles, 20% ellipses, 20% triangles
-                      : shapeRoll < 0.8 ? ConfettiShape.Ellipse
+                Size = minSize + _random.NextDouble() * (maxSize - minSize),
+                Brush = colorList[_random.Next(colorList.Count)],
+                Shape = shapeRoll < 0.7 ? ConfettiShape.Rectangle // 70% rectangles, 25% ellipses, 5% triangles
+                      : shapeRoll < 0.95 ? ConfettiShape.Ellipse
                       : ConfettiShape.Triangle,
                 Drag = 0.65 + _random.NextDouble() * 0.3,
                 IsWide = _random.Next(2) == 0,
@@ -219,7 +333,30 @@ namespace WpfConfetti
 
             };
             _particles.Add(confettiParticle);
+            UpdateRenderSubscription();
         }
 
+        private void UpdateRenderSubscription()
+        {
+            bool shouldBeSubscribed = IsVisible &&
+                (_particles.Count > 0 || IsRaining || _cannonQueue.Count > 0);
+
+            if (shouldBeSubscribed)
+            {
+                if (!_isSubscribed) 
+                {
+                    CompositionTarget.Rendering += OnFrame;
+                    _isSubscribed = true;
+                }
+            }
+            else
+            {
+                if (_isSubscribed)
+                {
+                    CompositionTarget.Rendering -= OnFrame;
+                    _isSubscribed = false;
+                }
+            }
+        }
     }
 }
