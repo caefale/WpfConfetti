@@ -2,10 +2,10 @@
 
 A lightweight WPF confetti control with burst, cannons, and rain modes.
 
-## Installation
-```bash
-dotnet add package Wpf.Confetti
-```
+[![NuGet](https://img.shields.io/nuget/v/Wpf.Confetti.svg)](https://www.nuget.org/packages/Wpf.Confetti/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Wpf.Confetti.svg)](https://www.nuget.org/packages/Wpf.Confetti/)
+
+![black-gif](https://github.com/user-attachments/assets/5ecff3e6-a692-4ff4-bcf2-b9a299d4b32c)
 
 ## Usage
 
