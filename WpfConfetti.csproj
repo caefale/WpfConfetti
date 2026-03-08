@@ -7,7 +7,7 @@
     <UseWPF>true</UseWPF>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Wpf.Confetti</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>caefale</Authors>
     <Description>A lightweight WPF confetti control with burst, cannons, and rain modes.</Description>
     <PackageTags>wpf;confetti;celebration;control;particles;animation;effects</PackageTags>
@@ -15,8 +15,11 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <AssemblyName>Wpf.Confetti</AssemblyName>
     <PackageReadmeFile>NUGETREADME.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\"/>
+    <None Include="README.md" Pack="false" />
+    <None Include="NUGETREADME.md" Pack="true" PackagePath="\" />
+    <None Include="icon.png" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
