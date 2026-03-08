@@ -1,10 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <TargetFrameworks>net8.0-windows;net10.0-windows</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Wpf.Confetti</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>caefale</Authors>
+    <Description>A lightweight WPF confetti control with burst, cannons, and rain modes.</Description>
+    <PackageTags>wpf;confetti;celebration;control;particles;animation;effects</PackageTags>
+    <RepositoryUrl>https://github.com/caefale/WpfConfetti</RepositoryUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <AssemblyName>Wpf.Confetti</AssemblyName>
+    <PackageReadmeFile>NUGETREADME.md</PackageReadmeFile>
   </PropertyGroup>
-
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\"/>
+  </ItemGroup>
 </Project>

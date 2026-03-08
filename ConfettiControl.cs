@@ -51,8 +51,10 @@ namespace Wpf.Confetti
         };
 
         private TimeSpan _lastRenderTime = TimeSpan.Zero;
+        private List<Action>? _pendingActions;
 
         private static readonly Random _random = new();
+        private static readonly Predicate<ConfettiParticle> _isDead = p => p.IsDead;
 
         private bool _isWindowActive = true;
         private bool _isSubscribed = false;
@@ -67,8 +69,11 @@ namespace Wpf.Confetti
         private double _rainGravity = 85;
         private List<Brush>? _rainColors;
 
+
         public ConfettiControl()
         {
+            foreach (var brush in _colors) brush.Freeze();
+
             _particles = new List<ConfettiParticle>();
             IsHitTestVisible = false;
 
@@ -82,6 +87,11 @@ namespace Wpf.Confetti
                     window.Activated += (ss, ee) => { _isWindowActive = true; _cannonAccumulator = 0; _lastRenderTime = TimeSpan.Zero; UpdateRenderSubscription(); };
                     window.Deactivated += (ss, ee) => { _isWindowActive = false; UpdateRenderSubscription(); };
                 }
+                if (_pendingActions != null)
+                {
+                    foreach (var action in _pendingActions) action();
+                    _pendingActions = null;
+                }
                 UpdateRenderSubscription();
             };
 
@@ -92,6 +102,7 @@ namespace Wpf.Confetti
             double maxSpeed = 300, double minSize = 3, double maxSize = 5, double minAngle = 0,
             double maxAngle = 360, double gravity = 85, List<Brush>? colors = null)
         {
+            if (IsPendingLayout(() => Burst(amount, position, minSpeed, maxSpeed, minSize, maxSize, minAngle, maxAngle, gravity, colors))) return;
             Point p = position ?? new Point(ActualWidth / 2, ActualHeight / 2);
 
             UpdateRenderSubscription();
@@ -103,6 +114,7 @@ namespace Wpf.Confetti
             double minSpeed = 300, double maxSpeed = 500, double minSize = 2,
             double maxSize = 5, double gravity = 120, List<Brush>? colors = null)
         {
+            if (IsPendingLayout(() => Cannons(amount, rate, spread, minSpeed, maxSpeed, minSize, maxSize, gravity, colors))) return;
             _cannonQueue.Enqueue(new CannonBatch
             {
                 Remaining = amount,
@@ -147,6 +159,7 @@ namespace Wpf.Confetti
         public void StartRain(double rate = 80, double minSpeed = 60, double maxSpeed = 120,
             double minSize = 2, double maxSize = 5, double gravity = 85, List<Brush>? colors = null)
         {
+            if (IsPendingLayout(() => StartRain(rate, minSpeed, maxSpeed, minSize, maxSize, gravity, colors))) return;
             IsRaining = true;
             _rainMinSpeed = minSpeed;
             _rainMaxSpeed = maxSpeed;
@@ -298,7 +311,7 @@ namespace Wpf.Confetti
                     p.IsDead = true;
                 }
             }
-            if (_hasDead) _particles.RemoveAll(p => p.IsDead);
+            if (_hasDead) _particles.RemoveAll(_isDead);
         }
 
         private void SpawnParticle(Point position, double minAngle, double maxAngle,
@@ -357,6 +370,16 @@ namespace Wpf.Confetti
                     _isSubscribed = false;
                 }
             }
+        }
+
+        private bool IsPendingLayout(Action action)
+        {
+            if (ActualWidth == 0 || ActualHeight == 0)
+            {
+                (_pendingActions ??= new()).Add(action);
+                return true;
+            }
+            return false;
         }
     }
 }
