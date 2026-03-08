@@ -2,9 +2,13 @@
 
 A lightweight WPF confetti control with burst, cannons, and rain modes.
 
-![GIF](https://github.com/user-attachments/assets/6f73b2ad-0b69-4178-b29f-4a2aecbcdd8e)
+[![NuGet](https://img.shields.io/nuget/v/Wpf.Confetti.svg)](https://www.nuget.org/packages/Wpf.Confetti/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/Wpf.Confetti.svg)](https://www.nuget.org/packages/Wpf.Confetti/)
+
+![black-gif](https://github.com/user-attachments/assets/5ecff3e6-a692-4ff4-bcf2-b9a299d4b32c)
 
 ## Usage
+
 Add the control to your XAML:
 ```xml
 xmlns:confetti="clr-namespace:Wpf.Confetti;assembly=Wpf.Confetti"
