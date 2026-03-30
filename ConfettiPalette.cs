@@ -53,6 +53,11 @@ namespace Wpf.Confetti
                 new SolidColorBrush(Color.FromRgb(255, 0, 255)),   // Pure magenta
                 new SolidColorBrush(Color.FromRgb(0, 255, 255))    // Pure cyan
             };
+
+            foreach (var brush in Default) brush.Freeze();
+            foreach (var brush in Fire) brush.Freeze();
+            foreach (var brush in Snow) brush.Freeze();
+            foreach (var brush in Party) brush.Freeze();
         }
     }
 }
