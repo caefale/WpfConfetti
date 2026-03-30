@@ -9,7 +9,7 @@
   <WindowsPackageType>None</WindowsPackageType>  <!-- ADD THIS -->
 
     <PackageId>Wpf.Confetti</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Authors>caefale</Authors>
     <Description>A lightweight WPF confetti control with burst, cannons, and rain modes.</Description>
     <PackageTags>wpf;confetti;celebration;control;particles;animation;effects</PackageTags>

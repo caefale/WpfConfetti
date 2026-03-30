@@ -24,6 +24,22 @@ Confetti.Cannons();
 Confetti.StartRain();
 Confetti.StopRain();
 ```
+## Palettes
+WpfConfetti includes built-in color palettes via the `ConfettiPalette` class:
+
+```csharp
+// Default color palette
+Confetti.Burst(colors: ConfettiPalette.Default);
+
+// Warm red-orange-gold tones
+Confetti.Burst(colors: ConfettiPalette.Fire);
+
+// Cool white-blue-silver tones
+Confetti.Burst(colors: ConfettiPalette.Snow);
+
+// High saturation primary colors
+Confetti.Burst(colors: ConfettiPalette.Party);
+```
 
 ## API
 | Method      | Parameters                                                                                                   |
