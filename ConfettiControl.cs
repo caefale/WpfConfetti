@@ -28,7 +28,7 @@ namespace Wpf.Confetti
     {
         public int Remaining;
         public double MinSpeed, MaxSpeed, Gravity, MinSize, MaxSize, Spread, Rate;
-        public List<Brush>? Colors;
+        public IEnumerable<Brush>? Colors;
     }
 
     internal enum ConfettiShape
@@ -67,7 +67,7 @@ namespace Wpf.Confetti
         private double _rainMinSpeed = 60, _rainMaxSpeed = 120;
         private double _rainMinSize = 2, _rainMaxSize = 5;
         private double _rainGravity = 85;
-        private List<Brush>? _rainColors;
+        private IEnumerable<Brush>? _rainColors;
 
 
         public ConfettiControl()
@@ -100,7 +100,7 @@ namespace Wpf.Confetti
 
         public void Burst(int amount = 75, Point? position = null, double minSpeed = 50, 
             double maxSpeed = 300, double minSize = 3, double maxSize = 5, double minAngle = 0,
-            double maxAngle = 360, double gravity = 85, List<Brush>? colors = null)
+            double maxAngle = 360, double gravity = 85, IEnumerable<Brush>? colors = null)
         {
             if (IsPendingLayout(() => Burst(amount, position, minSpeed, maxSpeed, minSize, maxSize, minAngle, maxAngle, gravity, colors))) return;
             Point p = position ?? new Point(ActualWidth / 2, ActualHeight / 2);
@@ -112,7 +112,7 @@ namespace Wpf.Confetti
 
         public void Cannons(int amount = 500, double rate = 75, double spread = 15,
             double minSpeed = 300, double maxSpeed = 500, double minSize = 2,
-            double maxSize = 5, double gravity = 120, List<Brush>? colors = null)
+            double maxSize = 5, double gravity = 120, IEnumerable<Brush>? colors = null)
         {
             if (IsPendingLayout(() => Cannons(amount, rate, spread, minSpeed, maxSpeed, minSize, maxSize, gravity, colors))) return;
             _cannonQueue.Enqueue(new CannonBatch
@@ -157,7 +157,7 @@ namespace Wpf.Confetti
         }
 
         public void StartRain(double rate = 80, double minSpeed = 60, double maxSpeed = 120,
-            double minSize = 2, double maxSize = 5, double gravity = 85, List<Brush>? colors = null)
+            double minSize = 2, double maxSize = 5, double gravity = 85, IEnumerable<Brush>? colors = null)
         {
             if (IsPendingLayout(() => StartRain(rate, minSpeed, maxSpeed, minSize, maxSize, gravity, colors))) return;
             IsRaining = true;
@@ -316,14 +316,16 @@ namespace Wpf.Confetti
 
         private void SpawnParticle(Point position, double minAngle, double maxAngle,
             double minSpeed, double maxSpeed, double gravity, double minSize, double maxSize, 
-            int angleAdjustment = 0, List<Brush>? colors = null)
+            int angleAdjustment = 0, IEnumerable<Brush>? colors = null)
         {
             double angleDeg = minAngle + _random.NextDouble() * (maxAngle - minAngle);
             angleDeg -= angleAdjustment;
             double angleRad = angleDeg * Math.PI / 180.0;
+
             double speed = minSpeed + _random.NextDouble() * (maxSpeed - minSpeed);
             double shapeRoll = _random.NextDouble();
-            List<Brush> colorList = colors ?? _colors;
+            var colorList = (colors ?? _colors).ToList();
+
             ConfettiParticle confettiParticle = new ConfettiParticle
             {
                 Position = position,

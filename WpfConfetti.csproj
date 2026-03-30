@@ -5,7 +5,9 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <IsPackable>true</IsPackable>
+  <WindowsPackageType>None</WindowsPackageType>  <!-- ADD THIS -->
+
     <PackageId>Wpf.Confetti</PackageId>
     <Version>1.0.1</Version>
     <Authors>caefale</Authors>
