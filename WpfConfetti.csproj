@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <IsPackable>true</IsPackable>
-  <WindowsPackageType>None</WindowsPackageType>  <!-- ADD THIS -->
+    <WindowsPackageType>None</WindowsPackageType> 
 
     <PackageId>Wpf.Confetti</PackageId>
     <Version>1.0.2</Version>
